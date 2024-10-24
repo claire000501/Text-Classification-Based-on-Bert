@@ -7,6 +7,6 @@ Training Steps are as following:
 (2)Train the model based on the optimal parameter combination and evaluate its performance, using metrics such as accuracy, precision, recall, and F1 score.  
 (3)Use the trained model to classify the test set and calculate the accuracy.  
 
-After experimenting with base BERT and other BERT-based variant models, we found that the base version performed moderately well, likely due to its average performance with Chinese text. Consequently, we tried a Chinese pre-trained model, Chinese-RoBERTa-wwm-ext, which demonstrated superior classification results for Chinese. By dividing the training and prediction sets in a 1:1 ratio, we achieved an accuracy of over 85%.  
+After experimenting with base BERT and other BERT-based variant models, we found that the base version of BERT did not perform well, likely due to its generally weaker performance in handling Chinese text. Consequently, we tried a Chinese pre-trained model, Chinese-RoBERTa-wwm-ext, which demonstrated superior classification results for Chinese. By dividing the training and prediction sets in a 1:1 ratio, we achieved an accuracy of over 85%.  
 
 huggingface link: https://huggingface.co/hfl/chinese-roberta-wwm-ext
