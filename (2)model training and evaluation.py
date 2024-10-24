@@ -9,12 +9,12 @@ import torch
 import shutil
 import random
 
-# 加载数据
-file_path = '/Users/clairewang/Desktop/platform/bert/sample2.xlsx'
+# Load data
+file_path = '/Desktop/BERT/sample.xlsx'
 data = pd.read_excel(file_path)
-data = data.tail(900)  # 这里假设你只有900条数据
+data = data.tail(XXXX)  # select the required number of text entries
 
-# 数据增强函数
+# Data augmentation function
 def augment_text(text):
     words = text.split()
     if len(words) > 3:
@@ -24,41 +24,41 @@ def augment_text(text):
     else:
         return text
 
-# 增加数据量
+# Increase data volume
 augmented_texts = []
 augmented_labels = []
 for i in range(len(data)):
-    for _ in range(5):  # 每条数据生成5个增强样本
+    for _ in range(5):  # Generate 5 augmented samples for each data point
         augmented_texts.append(augment_text(data['comment'].iloc[i]))
-        augmented_labels.append(data['信任程度'].iloc[i])
+        augmented_labels.append(data['trust classification'].iloc[i])
 
 augmented_data = pd.DataFrame({
     'comment': augmented_texts,
-    '信任程度': augmented_labels
+    'trust classification': augmented_labels
 })
 
-# 合并原始数据和增强数据
+# Combine original data and augmented data
 data = pd.concat([data, augmented_data], ignore_index=True)
 
-# 标签编码
+# Label encoding
 label_encoder = LabelEncoder()
-data['信任程度编码'] = label_encoder.fit_transform(data['信任程度'])
+data['trust classification encoding'] = label_encoder.fit_transform(data['trust classification'])
 
-# 加载BERT分词器和模型
+# Load BERT tokenizer and model
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=3)
 
-# 定义一个函数来对文本进行编码
+# Define a function to encode the text data
 def encode_data(text_list, tokenizer, max_length=128):
     return tokenizer(text_list, padding=True, truncation=True, max_length=max_length)
 
-# 编码文本数据
+# Encode the text data
 encoded_data = encode_data(data['comment'].tolist(), tokenizer)
 
-# 确保标签转换为torch.tensor，并转换为长整型
-labels = torch.tensor(data['信任程度编码'].values, dtype=torch.long)
+# Ensure labels are converted to torch.tensor and of type long
+labels = torch.tensor(data['trust classification encoding'].values, dtype=torch.long)
 
-# 自定义数据集类
+# Custom dataset class
 class TrustDataset(Dataset):
     def __init__(self, encodings, labels):
         self.encodings = encodings            
@@ -72,18 +72,18 @@ class TrustDataset(Dataset):
         item['labels'] = self.labels[idx]
         return item
 
-# 将数据划分为训练集和测试集
+# Split data into training and testing sets
 train_texts, test_texts, train_labels, test_labels = train_test_split(data['comment'].tolist(), labels, test_size=0.2, random_state=42)
 
-# 编码训练集和测试集
+# Encode training and testing sets
 train_encodings = encode_data(train_texts, tokenizer)
 test_encodings = encode_data(test_texts, tokenizer)
 
-# 创建数据集实例
+# Create dataset instances
 train_dataset = TrustDataset(train_encodings, train_labels)
 test_dataset = TrustDataset(test_encodings, test_labels)
 
-# 使用最佳参数设置训练参数
+# Set training parameters with the best parameters
 best_params = {
     'num_train_epochs': 3,
     'per_device_train_batch_size': 4,
@@ -91,8 +91,8 @@ best_params = {
     'warmup_steps': 200
 }
 
-output_dir = '/Users/clairewang/Desktop/platform/bert/best_model2/results'
-logging_dir = '/Users/clairewang/Desktop/platform/bert/best_model2/logs'
+output_dir = '/Desktop/BERT/results'
+logging_dir = '/Desktop/BERT/logs'
 
 if os.path.exists(output_dir):
     shutil.rmtree(output_dir)
@@ -116,7 +116,7 @@ training_args = TrainingArguments(
     eval_steps=50
 )
 
-# 定义评估指标
+# Define evaluation metrics
 def compute_metrics(p):
     preds = p.predictions.argmax(-1)
     labels = p.label_ids
@@ -129,7 +129,7 @@ def compute_metrics(p):
         'f1': f1
     }
 
-# 创建Trainer实例
+# Create Trainer instance
 trainer = Trainer(
     model=model,
     args=training_args,
@@ -138,13 +138,13 @@ trainer = Trainer(
     compute_metrics=compute_metrics
 )
 
-# 训练模型
+# Train the model
 trainer.train()
 
-# 评估模型
+# Evaluate the model
 eval_results = trainer.evaluate()
 
-# 打印评估结果
+# Print evaluation results
 print("Evaluation Results:")
 print(f"Accuracy: {eval_results['eval_accuracy']}")
 print(f"Precision: {eval_results['eval_precision']}")
