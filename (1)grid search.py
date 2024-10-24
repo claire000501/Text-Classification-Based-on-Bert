@@ -9,12 +9,12 @@ import torch
 import shutil
 import random
 
-# 加载数据
-file_path = '/Users/clairewang/Desktop/platform/bert/sample1000.xlsx'
+# Load data
+file_path = '/Desktop/BERT/sample.xlsx'
 data = pd.read_excel(file_path)
-data = data.tail(1000)  # 这里假设你只有1000条数据
+data = data.tail(xxxx)  #select the required number of text entries
 
-# 数据增强函数
+# Data augmentation function
 def augment_text(text):
     words = text.split()
     if len(words) > 3:
@@ -24,41 +24,41 @@ def augment_text(text):
     else:
         return text
 
-# 增加数据量
+# Increase data size
 augmented_texts = []
 augmented_labels = []
 for i in range(len(data)):
-    for _ in range(5):  # 每条数据生成5个增强样本
-        augmented_texts.append(augment_text(data['提问'].iloc[i]))
-        augmented_labels.append(data['信任程度'].iloc[i])
+    for _ in range(5):  # Generate 5 augmented samples for each data point
+        augmented_texts.append(augment_text(data['comment'].iloc[i]))
+        augmented_labels.append(data['trust classification'].iloc[i])
 
 augmented_data = pd.DataFrame({
-    '提问': augmented_texts,
-    '信任程度': augmented_labels
+    'comment': augmented_texts,
+    'trust classification': augmented_labels
 })
 
-# 合并原始数据和增强数据
+# Combine original data and augmented data
 data = pd.concat([data, augmented_data], ignore_index=True)
 
-# 标签编码
+# Label encoding
 label_encoder = LabelEncoder()
-data['信任程度编码'] = label_encoder.fit_transform(data['信任程度'])
+data['trust classification encoding'] = label_encoder.fit_transform(data['trust classification'])
 
-# 加载BERT分词器和模型
+# Load BERT tokenizer and model
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=3)
 
-# 定义一个函数来对文本进行编码
+# Define a function to encode the text data
 def encode_data(text_list, tokenizer, max_length=128):
     return tokenizer(text_list, padding=True, truncation=True, max_length=max_length)
 
-# 编码文本数据
-encoded_data = encode_data(data['提问'].tolist(), tokenizer)
+# Encode the text data
+encoded_data = encode_data(data['comment'].tolist(), tokenizer)
 
-# 确保标签转换为torch.tensor，并转换为长整型
-labels = torch.tensor(data['信任程度编码'].values, dtype=torch.long)
+# Ensure labels are converted to torch.tensor and of type long
+labels = torch.tensor(data['trust classification encoding'].values, dtype=torch.long)
 
-# 自定义数据集类
+# Custom dataset class
 class TrustDataset(Dataset):
     def __init__(self, encodings, labels):
         self.encodings = encodings            
@@ -72,18 +72,18 @@ class TrustDataset(Dataset):
         item['labels'] = self.labels[idx]
         return item
 
-# 将数据划分为训练集和测试集
-train_texts, test_texts, train_labels, test_labels = train_test_split(data['提问'].tolist(), labels, test_size=0.2, random_state=42)
+# Split data into training and testing sets
+train_texts, test_texts, train_labels, test_labels = train_test_split(data['comment'].tolist(), labels, test_size=0.2, random_state=42)
 
-# 编码训练集和测试集
+# Encode training and testing sets
 train_encodings = encode_data(train_texts, tokenizer)
 test_encodings = encode_data(test_texts, tokenizer)
 
-# 创建数据集实例
+# Create dataset instances
 train_dataset = TrustDataset(train_encodings, train_labels)
 test_dataset = TrustDataset(test_encodings, test_labels)
 
-# 创建参数网格
+# Create parameter grid
 param_grid = {
     'num_train_epochs': [3, 5, 10],
     'per_device_train_batch_size': [4, 8, 16],
@@ -91,7 +91,7 @@ param_grid = {
     'warmup_steps': [100, 200, 500]
 }
 
-# 定义一个函数来创建Trainer实例
+# Define a function to create a Trainer instance
 def create_trainer(output_dir, logging_dir, num_train_epochs, per_device_train_batch_size, learning_rate, warmup_steps):
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -116,7 +116,7 @@ def create_trainer(output_dir, logging_dir, num_train_epochs, per_device_train_b
     )
     return trainer
 
-# 定义评估指标
+# Define evaluation metrics
 def compute_metrics(p):
     preds = p.predictions.argmax(-1)
     labels = p.label_ids
@@ -129,7 +129,7 @@ def compute_metrics(p):
         'f1': f1
     }
 
-# 网格搜索
+# Grid search
 best_score = float('-inf')
 best_params = None
 
@@ -137,9 +137,9 @@ for epochs in param_grid['num_train_epochs']:
     for batch_size in param_grid['per_device_train_batch_size']:
         for lr in param_grid['learning_rate']:
             for warmup in param_grid['warmup_steps']:
-                output_dir = f'E:\\trust_classification\\results\\epochs_{epochs}_batch_{batch_size}_lr_{lr}_warmup_{warmup}'
-                logging_dir = f'E:\\trust_classification\\logs\\epochs_{epochs}_batch_{batch_size}_lr_{lr}_warmup_{warmup}'
-                
+                output_dir = f'/Desktop/BERT/results/epochs_{epochs}_batch_{batch_size}_lr_{lr}_warmup_{warmup}'
+                logging_dir = f'/Desktop/BERT/logs/epochs_{epochs}_batch_{batch_size}_lr_{lr}_warmup_{warmup}'
+
                 if os.path.exists(output_dir):
                     shutil.rmtree(output_dir)
                 os.makedirs(output_dir)
@@ -153,7 +153,7 @@ for epochs in param_grid['num_train_epochs']:
                 trainer.train()
                 eval_result = trainer.evaluate()
                 
-                eval_score = eval_result['eval_accuracy']  # 使用准确率作为比较指标
+                eval_score = eval_result['eval_accuracy']  # Use accuracy as the comparison metric
                 
                 if eval_score > best_score:
                     best_score = eval_score
