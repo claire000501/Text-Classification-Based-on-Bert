@@ -29,11 +29,11 @@ augmented_texts = []
 augmented_labels = []
 for i in range(len(data)):
     for _ in range(5):  # 每条数据生成5个增强样本
-        augmented_texts.append(augment_text(data['提问'].iloc[i]))
+        augmented_texts.append(augment_text(data['comment'].iloc[i]))
         augmented_labels.append(data['信任程度'].iloc[i])
 
 augmented_data = pd.DataFrame({
-    '提问': augmented_texts,
+    'comment': augmented_texts,
     '信任程度': augmented_labels
 })
 
@@ -53,7 +53,7 @@ def encode_data(text_list, tokenizer, max_length=128):
     return tokenizer(text_list, padding=True, truncation=True, max_length=max_length)
 
 # 编码文本数据
-encoded_data = encode_data(data['提问'].tolist(), tokenizer)
+encoded_data = encode_data(data['comment'].tolist(), tokenizer)
 
 # 确保标签转换为torch.tensor，并转换为长整型
 labels = torch.tensor(data['信任程度编码'].values, dtype=torch.long)
@@ -73,7 +73,7 @@ class TrustDataset(Dataset):
         return item
 
 # 将数据划分为训练集和测试集
-train_texts, test_texts, train_labels, test_labels = train_test_split(data['提问'].tolist(), labels, test_size=0.2, random_state=42)
+train_texts, test_texts, train_labels, test_labels = train_test_split(data['comment'].tolist(), labels, test_size=0.2, random_state=42)
 
 # 编码训练集和测试集
 train_encodings = encode_data(train_texts, tokenizer)
